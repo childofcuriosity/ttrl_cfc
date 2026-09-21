@@ -381,6 +381,8 @@ reward_model:
 custom_reward_function:
   path: null
   name: compute_score
+  reward_kwargs:
+    reward_mode: accuracy
 
 algorithm:
   gamma: 1.0

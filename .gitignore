@@ -149,6 +149,18 @@ venv/
 .venv/
 ENV/
 
+# Local research records and large artifacts
+*.docx
+*.doc
+alioss/
+*_bash_history
+raw_results/
+artifacts/
+*.pt
+*.safetensors
+*.tar
+*.aria2
+
 # Spyder project settings
 .spyderproject
 

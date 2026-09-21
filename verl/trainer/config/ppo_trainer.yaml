@@ -859,6 +859,10 @@ custom_reward_function:
   # The name of the reward function within the specified file. Default is 'compute_score'.
   name: compute_score
 
+  # ``accuracy`` is standard TTRL; ``format_only`` is the format-bias ablation.
+  reward_kwargs:
+    reward_mode: accuracy
+
 # config for the algorithm
 algorithm:
 

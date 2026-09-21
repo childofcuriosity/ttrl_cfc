@@ -22,6 +22,7 @@ from sympy.parsing.sympy_parser import parse_expr
 import traceback
 
 from .math_utils import extract_boxed_answer, is_latex_equal, grade_answer_mathd, grade_answer_sympy, timeout_ours
+from .reward_modes import select_training_score
 
 """
 This code is adapted from Entropy Machanism Recipe (https://github.com/volcengine/verl/tree/main/recipe/entropy/).
@@ -64,12 +65,12 @@ def simplify_expression_string(expression_string: str) -> str:
         except Exception as e:
             return expression_string
 
-def compute_score(model_response, gt_answer, fast=False):
+def compute_score(model_response, gt_answer, fast=False, reward_mode="accuracy"):
     model_answer = extract_answer(model_response)
 
     if model_answer is None:
         return {
-            "score": 0.0,
+            "score": select_training_score(is_correct=False, has_format=False, reward_mode=reward_mode),
             "format_score": 0.0,
             "acc": False,
             "extracted_gt": gt_answer,
@@ -87,7 +88,7 @@ def compute_score(model_response, gt_answer, fast=False):
             is_correct |= grade(model_answer, gt, fast)
     if is_correct:
         return {
-            "score": 1.0,
+            "score": select_training_score(is_correct=True, has_format=True, reward_mode=reward_mode),
             "format_score": 1.0,
             "acc": True,
             "extracted_gt": gt_answer,
@@ -95,7 +96,7 @@ def compute_score(model_response, gt_answer, fast=False):
         }
     else:
         return {
-            "score": 0.0,
+            "score": select_training_score(is_correct=False, has_format=True, reward_mode=reward_mode),
             "format_score": 1.0,
             "acc": False,
             "extracted_gt": gt_answer,
@@ -103,10 +104,16 @@ def compute_score(model_response, gt_answer, fast=False):
         }
 
 def reward_func(
-    data_source, solution_str, ground_truth, extra_info=None, sandbox_fusion_url=None, concurrent_semaphore=None
+    data_source,
+    solution_str,
+    ground_truth,
+    extra_info=None,
+    sandbox_fusion_url=None,
+    concurrent_semaphore=None,
+    reward_mode="accuracy",
 ):
     try:
-        res = compute_score(solution_str, str(ground_truth))
+        res = compute_score(solution_str, str(ground_truth), reward_mode=reward_mode)
 
         if isinstance(res, dict):
             return res

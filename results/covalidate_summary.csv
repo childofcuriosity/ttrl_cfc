@@ -1,0 +1,5 @@
+model,dataset,state,rows,votes,vote_accuracy,greedy_accuracy,pseudo_label_accuracy
+Qwen2.5-Math-1.5B,MATH-TTT,pretrained,500,32000,0.322688,0.332000,0.756000
+Qwen2.5-Math-1.5B,MATH-TTT,step_150,500,32000,0.669312,0.672000,0.784000
+Qwen2.5-Math-1.5B-Instruct,MATH-TTT,pretrained,500,32000,0.750469,0.748000,0.802000
+Qwen2.5-Math-1.5B-Instruct,MATH-TTT,step_150,500,32000,0.758813,0.758000,0.794000

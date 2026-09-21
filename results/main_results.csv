@@ -1,0 +1,4 @@
+setting,model,dataset,reward_mode,step,metric,accuracy,evidence
+Pretrained,Qwen2.5-Math-1.5B,MATH-TTT,none,0,val-core/MATH-TTT/acc/mean@16,0.3200,recovered experiment record
+Full TTRL,Qwen2.5-Math-1.5B,MATH-TTT,accuracy,150,val-core/MATH-TTT/acc/mean@16,0.6625,recovered experiment record
+Format-only TTRL,Qwen2.5-Math-1.5B,MATH-TTT,format_only,150,val-core/MATH-TTT/acc/mean@16,0.6285,preserved training log
