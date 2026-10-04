@@ -1,113 +1,62 @@
-# Where Do TTRL Self-Improvement Gains Come From?
+# 大模型自我提升的增益来源研究
 
-An empirical study of performance gains and evaluator-format bias in test-time reinforcement learning.
+以 TTRL 为切入点，研究无需外部监督器的 self-improvement 方法如何提升效果，以及这些增益来自哪里。
 
-[中文说明](README_zh.md) · [Experiments](docs/EXPERIMENTS.md) · [Findings](docs/FINDINGS.md) · [Scope](docs/LIMITATIONS.md)
+本仓库保存相关研究代码和实验结果。本次整理重点是**多数投票中短整数答案的票数集中，以及多 token 小数分支造成的错误票数分散**。相关原始脚本、算术实验记录和运行说明见 [research/vote_dispersion](research/vote_dispersion/)。
 
-## Research question
+## 背景与需求
 
-TTRL uses majority-vote pseudo-labels to update a language model at test time. This repository asks what the resulting benchmark gain reflects: improved mathematical reasoning, or better adaptation between model outputs and the answer extractor used by the verifier.
+2025 年，以 TTRL 等为代表的多种 self-improvement 方法提出，无需外界奖励信号监督也能提升模型效果。研究这些方法究竟如何获得增益、提升是否有助于新知识发现，还是来自系统中的奖励偏差，是一个有科学意义和社会影响力的问题。
 
-We isolate the format component with a counterfactual reward. The standard reward gives one to an answer that matches the pseudo-label. The format-only reward gives one whenever the response contains an extractable `\\boxed{...}` answer, even when that answer is incorrect.
+本研究以 TTRL 为切入点，检查模型输出、投票伪标签与训练前后表现，并通过消融分析增益来源。这里“无需外部监督器”指训练反馈的来源，评估仍使用标准答案计算正确率。
 
-## Main finding
+## 主要结论
 
-In the recovered Qwen2.5-Math-1.5B / MATH-TTT setting, format-only training reached **0.6285** validation accuracy. The corresponding starting value was approximately **0.3200**, while full TTRL reached **0.6625**.
+在已考察的实验中，未发现新知识真实产生的证据；观察到的增益体现了系统设计中的两条具体路径。
 
-```text
-Recovered gain = (0.6285 - 0.3200) / (0.6625 - 0.3200) = 90.1%
-```
+### 1. 格式奖励路径
 
-Approximately 90% of the measured improvement is associated with format-bias correction in this setting. At step 150, the preserved run reports a training score and format score of 0.972 while answer accuracy is 0.628, confirming that the intervention optimized format compliance rather than answer correctness.
+通过检查输出，发现部分回答存在重复、超长或未按指令输出 `\boxed{...}` 的情况。由于 boxed 答案才能被有效抽取并参与投票，答案抽取和奖励规则形成了推动格式遵循的路径。
 
-| Setting | Reward | MATH-TTT accuracy (`mean@16`) |
-|---|---|---:|
-| Pretrained | none | ~0.3200 |
-| Full TTRL | pseudo-label match | 0.6625 |
-| TTRL format ablation | format only | 0.6285 |
+随后在 TTRL 的实验设置上进行消融：将奖励替换为“能抽取 boxed 答案即可奖励”，不再要求其中的内容正确或与伪标签一致。结果如下：
 
-![Format-only reward recovers 90.1% of the observed full-TTRL improvement.](results/main_results.svg)
+| Qwen2.5-Math-1.5B / MATH-TTT | 验证准确率（`mean@16`） |
+|---|---:|
+| 训练前 | 约 0.3200 |
+| 完整 TTRL | 0.6625 |
+| 仅格式奖励 | 0.6285 |
 
-The instruction-tuned control shows the complementary pattern. In preserved co-validation exports, Qwen2.5-Math-1.5B improves from 0.322688 to 0.669312, whereas Qwen2.5-Math-1.5B-Instruct moves from 0.750469 to 0.758813. The model that already follows the expected output format shows a much smaller change.
+`(0.6285 - 0.3200) / (0.6625 - 0.3200) ≈ 90.1%`
 
-## Contributions
+即在该设置中，仅格式奖励便获得了完整 TTRL 约 90% 的观测增量，支持格式奖励路径是主要增益来源。保存结果和数值来源见 [FINDINGS](docs/FINDINGS.md)，原有实验入口保留在 [EXPERIMENTS](docs/EXPERIMENTS.md)。
 
-- Reproduced and debugged TTRL on top of veRL and vLLM.
-- Added co-validation instrumentation for pre/post-training comparisons, temperature sweeps, response length and majority-vote behavior.
-- Designed and ran a format-only reward intervention that separates evaluator compatibility from answer correctness.
-- Evaluated three primary model configurations across MATH-500/MATH-TTT, AMC and AIME, with an exploratory CommonsenseQA extension.
-- Released scripts that regenerate compact result tables and the main figure from preserved logs and co-validation exports.
+### 2. 多数投票中的短答案聚合与错误分支分散
 
-## Repository map
+当题目正确答案是短 token 的整数，而错误回答分叉为多种多 token 小数时，错误答案的票数被分散，正确整数则容易集中得票。由此，多数投票可能选出贪心解码未选中的正确答案。
 
-```text
-examples/ttrl/                         experiment launchers
-verl/trainer/ppo/ttrl_utils.py         pseudo-label and TTRL metrics
-verl/trainer/ppo/ray_trainer.py        co-validation instrumentation
-verl/utils/reward_score/ttrl_math/     grading and reward-mode intervention
-analysis/                              table and figure generation
-results/                               compact recovered results
-docs/                                  experiments, findings and scope
-```
+一手日志中的算术例子是 `68 / 34`：贪心输出 `1.946428`，采样则产生 `1.946428`、`1.946...`、`1.944947`、`1.852941` 等不同错误答案，而正确答案 `2` 重复出现并成为最高票答案。这个例子说明，错误分支整体占优时，单个正确答案仍可能通过票数集中胜出。
 
-## Installation
+研究中在 GSM8K 上也观察到这类情况，尤其关注短整数答案与多 token 小数分支的差别。当前整理入库的材料包括 GSM8K 选择题预处理源码，以及能够与一手日志逐项对应的可控算术实验脚本和结果；两者的来源分别标注在[研究过程记录](research/vote_dispersion/RESEARCH_NOTES.md)中。
 
-The experiments were run in the environment captured by `environment.yml`, with Python 3.10, PyTorch, veRL and vLLM:
+这种机制使模型已有输出分布中的正确答案更容易被选为伪标签。它依赖题目答案结构与错误分支分布，揭示了多数投票系统如何利用任务本身的偏差获得有效反馈。
 
-```bash
-conda env create -f environment.yml
-conda activate ttrl
-```
+## 后续研究与研究价值
 
-For veRL's current installation alternatives, see the retained upstream documentation under `docs/`.
+我原本计划扩展到多种设置和方法。研究推进期间，同期逐渐有相近结论的论文发表，因此我认为未来更有价值的问题是：**如何设计拥有良好反馈偏差的系统？** 这也成为我在博士阶段期待继续研究的方向。
 
-## Run the reward ablation
+我的研究判断是，缺少指向正确性的反馈来源时，单纯的自我循环难以支持真正的新知识发现。系统的正确设计能够提供有用的奖励偏差；self-improvement 与递归自我提升（RSI）的重点应放在识别、设计和验证这些反馈机制上。“无外部监督器则无法真正提升”是由此引出的研究立场，本文实验所直接支持的是上述具体增益路径。
 
-Standard TTRL reward:
+## 代码与材料
 
-```bash
-bash examples/ttrl/run_reward_ablation.sh \
-  accuracy \
-  examples/ttrl/Qwen2.5-Math/math.sh
-```
+| 入口 | 内容 |
+|---|---|
+| [research/vote_dispersion/](research/vote_dispersion/) | 此次整理的分支分票实验源码、原始算术记录与使用说明 |
+| [research/vote_dispersion/gsm8k/](research/vote_dispersion/gsm8k/) | GSM8K 选择题数据预处理 |
+| [examples/ttrl/](examples/ttrl/) | 已有 TTRL 训练与加载脚本 |
+| [verl/trainer/ppo/ttrl_utils.py](verl/trainer/ppo/ttrl_utils.py) | TTRL 伪标签投票实现 |
+| [analysis/](analysis/) 与 [results/](results/) | 已有格式奖励分析工具与汇总结果 |
+| [docs/archive/](docs/archive/) | 原有中英文 README |
 
-Format-only reward:
+新增归档中的研究脚本保持原有实验逻辑。输入文件、运行顺序、依赖、历史实现细节和目前缺少的生成环节，见[运行说明](research/vote_dispersion/README.md)。
 
-```bash
-bash examples/ttrl/run_reward_ablation.sh \
-  format_only \
-  examples/ttrl/Qwen2.5-Math/math.sh
-```
-
-The wrapper forwards extra Hydra overrides to the selected experiment script. The underlying configuration is:
-
-```yaml
-custom_reward_function:
-  path: ./verl/utils/reward_score/ttrl_math/__init__.py
-  name: reward_func
-  reward_kwargs:
-    reward_mode: accuracy  # accuracy | format_only
-```
-
-## Reproduce tables and figures
-
-```bash
-python analysis/extract_training_metrics.py train.log \
-  --output results/format_only_curve.csv
-
-python analysis/summarize_covalidate.py \
-  covalidate_preload.csv covalidate_loaded_step_150.csv \
-  --output results/covalidate_recomputed.csv
-
-python analysis/plot_ablation.py
-```
-
-See [the experiment guide](docs/EXPERIMENTS.md) for the experiment matrix and [the findings](docs/FINDINGS.md) for the evidence chain.
-
-## Results and scope
-
-The headline estimate is grounded in the preserved Qwen2.5-Math-1.5B format-only log and contemporaneous full-TTRL record. Llama-3.1 exhibited unstable dynamics in the recovered run. The next measurement is to repeat the explicit reward-mode intervention across seeds, extractors and the remaining datasets. Details are in [Scope and next measurements](docs/LIMITATIONS.md).
-
-## Attribution
-
-This project builds on [veRL](https://github.com/volcengine/verl) and the TTRL research implementation. The Apache-2.0 license and original notices are retained. Reconstruction sources and project-specific contributions are listed in [Provenance](docs/PROVENANCE.md).
+本项目基于 [veRL](https://github.com/volcengine/verl) 和 [TTRL](https://github.com/PRIME-RL/TTRL)，保留原有许可证及声明。材料来源见 [PROVENANCE](docs/PROVENANCE.md)。
