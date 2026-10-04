@@ -49,6 +49,31 @@ Seven responses were wrong and three were right. But all three correct responses
 
 This pattern was especially clear on GSM8K: short integer answers collected votes, while different multi-token decimal errors split them. To make this source of improvement clear, I ran controlled experiments on arithmetic tasks whose correct outputs were single characters. I selected cases with longer greedy responses, at least one correct sampled answer, and several distinct sampled answers, then compared their behavior before and after training. These experiments made the role of vote dispersion easier to isolate and demonstrate.
 
+### A controlled arithmetic experiment
+
+I constructed arithmetic problems with answers from `0` to `9`. The correct answers were single characters, but generation was not forcibly limited to one character. From 158,314 saved greedy predictions, I selected 1,613 longer responses and sampled 20 answers per question. Of these, 186 had at least three distinct sampled answers and included the correct answer. I kept the 80 whose majority-vote pseudo-label was correct and used them for training.
+
+One saved case was `212 / 212`. Greedy decoding returned `100`, while the samples split as follows:
+
+| Sampled answer | Votes |
+|---|---:|
+| `1` (correct) | 9 |
+| `10` | 2 |
+| `101` | 5 |
+| `100` | 4 |
+
+The 11 wrong responses split across three answers, so the correct answer won with 9 votes. This also shows that the mechanism applies to longer integer errors, not just decimals.
+
+All 80 selected questions were initially wrong under greedy decoding. After training on their pseudo-labels, the journal records:
+
+| Evaluation on the selected 80 questions | Greedy accuracy | Source |
+|---|---:|---|
+| Before training | 0/80 (0%) | Archived predictions |
+| After the initial training run | 68/80 (85%) | Research journal |
+| After one additional epoch | 69/80 (86.25%) | Research journal |
+
+This experiment shows how an answer already recoverable by voting can become available through greedy decoding after training. The 80 questions were selected using ground truth and pseudo-label correctness, then used for training and evaluation. The result demonstrates the mechanism on that subset; it is not a held-out generalization score. The post-training figures survive in the journal, while the corresponding full prediction files have not yet been recovered.
+
 The code is in [research/vote_dispersion](research/vote_dispersion/). GSM8K multiple-choice preprocessing and the arithmetic experiment records are kept separately. The [research notes](research/vote_dispersion/RESEARCH_NOTES.md) describe how these experiments developed.
 
 ## Where I want to take this next

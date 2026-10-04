@@ -39,6 +39,22 @@ The notes proposed three selection conditions: a longer greedy answer, at least 
 
 The notes then describe saving those 80 cases as `arithmetic_dataset.csv` for training. The recovered files contain selection code and its inputs and outputs. The original inference and training entry points for this run have not been found, and no replacement implementation has been added.
 
+### Quantitative results on the selected subset
+
+The archived `selection/*pseudo_correct_only.csv` contains 80 questions: 74 division problems and 6 subtraction problems. Each has 20 sampled answers, an incorrect greedy prediction, and a correct pseudo-label. Thus, the initial greedy accuracy on this subset is 0/80, while pseudo-label accuracy is 80/80 by construction.
+
+For `212 / 212`, the saved greedy prediction is `100`. The vote counts are `1: 9`, `10: 2`, `101: 5`, and `100: 4`. The correct answer wins despite incorrect responses accounting for 11 of the 20 samples.
+
+The October 23 journal entry reports `Accuracy: 85.00% (68/80)` after training on these questions and notes the same accuracy for greedy and sampled evaluation. After another epoch, it records `Accuracy: 86.25% (69/80)`.
+
+| Stage | Greedy accuracy | Evidence |
+|---|---:|---|
+| Before training | 0/80 (0%) | Recomputed from the archived CSV |
+| After the initial training run | 68/80 (85%) | Journal entry |
+| After one additional epoch | 69/80 (86.25%) | Journal entry |
+
+The single-character constraint describes the correct answers, not a hard generation limit. The archived selection script uses character length greater than one as its historical proxy for multi-token output. These are selected training questions evaluated again after training, rather than a separate held-out set. Full post-training prediction files have not yet been recovered, so the two post-training figures are reported from the journal rather than presented as independently recomputed results.
+
 ## Moving to TTRL: October 24, 2025
 
 A discussion highlighted the small overall gain in the early arithmetic experiments and the need to inspect real tasks where published methods reported larger improvements. The notes then turn to TTRL, followed by output analysis and the format-reward ablation.
