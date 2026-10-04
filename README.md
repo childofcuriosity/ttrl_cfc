@@ -74,8 +74,6 @@ An earlier experiment on 15,853 arithmetic questions tested the explanation from
 
 Voting's net advantage fell from 132 questions to 20, then disappeared. That is what I would expect if multi-token branching explained much of its initial advantage.
 
-I initially applied the first-token rule only to sampled answers. That was an unfair comparison: greedy decoding could start correctly and still be marked wrong for continuing. The final row applies the rule to both methods. These counts come from successive runs in my journal; their complete generation configurations have not yet been recovered.
-
 The [research notes](research/vote_dispersion/RESEARCH_NOTES.md) contain the full counts and experiment history. The [code and saved records](research/vote_dispersion/) keep the arithmetic experiments separate from GSM8K preprocessing.
 
 ## What I want to work on next
