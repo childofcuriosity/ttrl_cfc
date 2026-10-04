@@ -10,7 +10,7 @@ import random
 import datasets
 import ast
 
-# 固定随机种子，保证复现性
+# Fix the random seed for reproducibility.
 RANDOM_SEED = 42
 random.seed(RANDOM_SEED)
 
@@ -23,7 +23,7 @@ GSM8K_QUERY_TEMPLATE = (
 
 
 def parse_options(opt_str):
-    """确保 options 从字符串解析为 Python 列表"""
+    """Parse serialized options into a Python list."""
     if isinstance(opt_str, str):
         opt_str = opt_str.strip()
         if opt_str.startswith("["):
@@ -37,10 +37,10 @@ def parse_options(opt_str):
 
 
 def preprocess_gsm8k(csv_path: str):
-    """读取 CSV 并转换为 HuggingFace Dataset"""
+    """Read a CSV into a Hugging Face Dataset."""
     df = pd.read_csv(csv_path)
 
-    # ✅ 删除 Pandas 自动加的 index 列
+    # Remove automatically generated Pandas index columns.
     drop_cols = [c for c in ["__index__", "__index_level_0__"] if c in df.columns]
     if drop_cols:
         print(f"🧹 Dropping unnecessary columns: {drop_cols}")
@@ -52,20 +52,20 @@ def preprocess_gsm8k(csv_path: str):
 
 
 def make_map_fn(split_name):
-    """转换为统一格式"""
+    """Convert examples to the shared format."""
     def process_fn(example, idx):
         # import pdb; pdb.set_trace()
         opts = example["options"]
         if len(opts) != 4:
             raise ValueError(f"Options length != 4 for index {idx}")
 
-        # ✅ 随机打乱选项（全局种子已固定）
+        # Shuffle options using the fixed global seed.
         shuffled = list(zip("ABCD", opts))
         random.shuffle(shuffled)
         shuffled_labels, shuffled_opts = zip(*shuffled)
         opts = list(shuffled_opts)
 
-        # ✅ 找到正确答案的新索引
+        # Locate the correct answer after shuffling.
         correct_str = str(example["correct_answer"]).strip()
         gold_index = None
         for i, opt in enumerate(opts):
@@ -78,13 +78,13 @@ def make_map_fn(split_name):
 
         gold_choice = "ABCD"[gold_index]
 
-        # ✅ 构造 prompt
+        # Build the prompt.
         query_prompt = GSM8K_QUERY_TEMPLATE.format(
             Question=example["question"],
             A=opts[0], B=opts[1], C=opts[2], D=opts[3]
         )
 
-        # ✅ 精简后的数据结构
+        # Keep the required fields.
         data = {
             "prompt": query_prompt,
             "ground_truth": gold_choice,
@@ -94,27 +94,27 @@ def make_map_fn(split_name):
     return process_fn
 
 def process_and_save(csv_path: str, split: str, out_dir: str = None):
-    """加载、转换并保存为 parquet & csv（同目录输出，去掉 _raw）"""
+    """Write Parquet and CSV beside the input, removing _raw from the name."""
     print(f"\n📘 Processing split: {split}")
     dataset = preprocess_gsm8k(csv_path)
     dataset = dataset.map(function=make_map_fn(split), with_indices=True, num_proc=1, load_from_cache_file=False)
 
-    # 获取输入目录
+    # Get the input directory.
     input_dir = os.path.dirname(csv_path)
 
-    # 去掉文件名中的 "_raw"
+    # Remove "_raw" from the filename.
     base_name = os.path.basename(csv_path)
     base_name_no_raw = base_name.replace("_raw", "")
     file_stem = os.path.splitext(base_name_no_raw)[0]
 
-    # 输出路径：与输入同目录
+    # Save beside the input file.
     parquet_path = os.path.join(input_dir, f"{file_stem}.parquet")
     csv_path_out = os.path.join(input_dir, f"{file_stem}.csv")
 
-    # 保存 parquet
+    # Write Parquet.
     dataset.to_parquet(parquet_path)
 
-    # 保存 csv
+    # Write CSV.
     df = pd.DataFrame(dataset)
     df.to_csv(csv_path_out, index=False)
 

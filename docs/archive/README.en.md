@@ -4,7 +4,7 @@
 
 An empirical study of performance gains and evaluator-format bias in test-time reinforcement learning.
 
-[中文说明](README.zh.md) · [Experiments](../../docs/EXPERIMENTS.md) · [Findings](../../docs/FINDINGS.md) · [Scope](../../docs/LIMITATIONS.md)
+[Translated earlier Chinese README](README.previous-chinese.en.md) · [Experiments](../../docs/EXPERIMENTS.md) · [Findings](../../docs/FINDINGS.md) · [Scope](../../docs/LIMITATIONS.md)
 
 ## Research question
 

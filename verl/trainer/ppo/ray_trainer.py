@@ -660,7 +660,7 @@ class RayPPOTrainer:
         # Log to each configured logger
         self.validation_generations_logger.log(self.config.trainer.logger, samples, self.global_steps)
 
-    def _covalidate(self, temp=None): # 添加一个温度，非None就测测该温度的影响并且重命名
+    def _covalidate(self, temp=None): # Optionally override temperature and label the output.
         """
         Co-validation: use training-time decoding parameters (rollout) and
         TTRL's voting count (ttrl.n_votes_per_prompt) to compare two models.
@@ -671,22 +671,22 @@ class RayPPOTrainer:
         import re
         current_path = self.config['actor_rollout_ref']['model']['path']
         exp_name = self.config.get('trainer', {}).get('experiment_name', '')
-        exp_name = re.sub(r'^\d+-', '', exp_name) # 去掉日期
+        exp_name = re.sub(r'^\d+-', '', exp_name) # Remove the date prefix.
         # ==========================================
-        # 🚦 智能判断 Model Status
+        # Determine model status.
         # ==========================================
         status_tag = "unknown"
         
-        # 1. 提取 Step 数 (例如 global_step_240)
+        # 1. Extract the step number, e.g. global_step_240.
         step_match = re.search(r'global_step_(\d+)', current_path)
         step_str = f"_step_{step_match.group(1)}" if step_match else ""
 
-        # 2. 判断是 Loaded (HF格式) 还是 Preload (Checkpoint格式)
+        # 2. Distinguish loaded HF weights from the original checkpoint.
         if step_match:
-            # 你的要求: target_dir -> loaded
+            # Treat target_dir as a loaded model.
             status_tag = f"loaded{step_str}"
         else:
-            # 原始模型 (base model)
+            # Original base model.
             status_tag = "preload"
         if temp is not None:
             status_tag+=f'_t={temp}'
@@ -714,21 +714,21 @@ class RayPPOTrainer:
         top_p = rollout_conf.top_p
         top_k = rollout_conf.top_k
         do_sample = rollout_conf.do_sample
-        repetition_penalty = rollout_conf.get("repetition_penalty", None) # 已经废弃
- #debug_repeat_pel改4处：传参、惩罚因子、命名、调用处 。12.21该参数应该没用了，命名中去掉它。
+        repetition_penalty = rollout_conf.get("repetition_penalty", None) # Deprecated.
+ # Historical note (Dec 21): debug_repeat_pel affected arguments, penalty, naming, and call sites; it is no longer used in filenames.
 
         results = []
 
-        # ✅ pad 到 world_size（保证多卡一致）
+        # Pad to world_size for consistent multi-GPU execution.
         size_divisor = getattr(actor_model, "world_size", 1)
         sample_idx = 0
-        # 2️⃣ 遍历验证集（保持与 _validate 同步）
+        # Iterate over validation data, matching _validate.
         for test_data in self.val_dataloader:
-            # ✅ Greedy decoding（同 prompt，但不 repeat）
-            greedy_batch = test_data.copy()  # 保留原始 prompt 不重复
+            # Greedy decoding uses the same prompts without repetition.
+            greedy_batch = test_data.copy()  # Keep each original prompt once.
             greedy_batch = DataProto.from_single_dict(greedy_batch)
 
-            # groundtruth 抽取
+            # Extract ground truths.
             groundtruths = []
             
             if "reward_model" in greedy_batch.non_tensor_batch:
@@ -739,8 +739,8 @@ class RayPPOTrainer:
                 
             greedy_batch.meta_info = {
                 "eos_token_id": self.tokenizer.eos_token_id,
-                "do_sample": False,      # 🔥 禁用采样
-                "repetition_penalty": repetition_penalty, # <<<< 加在这里
+                "do_sample": False,      # Disable sampling.
+                "repetition_penalty": repetition_penalty, # Pass the penalty here.
             }
             
             greedy_batch_padded, pad_size = pad_dataproto_to_divisor(greedy_batch, size_divisor)
@@ -757,12 +757,12 @@ class RayPPOTrainer:
 
             test_batch = DataProto.from_single_dict(test_data)
 
-            # repeat 测试 batch：每个 prompt 重复 n_votes 次，以实现投票
+            # Repeat each prompt n_votes times for voting.
             test_batch = test_batch.repeat(
                 repeat_times=n_votes, interleave=True
             )
 
-            # 移除生成无关字段
+            # Remove fields not needed for generation.
             batch_keys_to_pop = ["input_ids", "attention_mask", "position_ids"]
             non_tensor_batch_keys_to_pop = ["raw_prompt_ids"]
             if "multi_modal_data" in test_batch.non_tensor_batch:
@@ -781,55 +781,55 @@ class RayPPOTrainer:
                 non_tensor_batch_keys=non_tensor_batch_keys_to_pop,
             )
 
-            # 原来没改底层是用了测试的参数，这和原文用训练的参数不一致。但是可以把它当作一种明牌算16次val采样取平均值的方法。
+            # Historically this used validation parameters rather than the paper's training parameters; it can be interpreted as averaging 16 validation samples.
             test_gen_batch.meta_info = {
                 "eos_token_id": self.tokenizer.eos_token_id,
                 "do_sample": do_sample,
                 "validate": True,
             }
-            # ✅ 使用训练时 rollout 参数，而非 val_kwargs  todo,这个之后再做，现在先保持和之前参数一致便于对比
+            # TODO: Use training rollout parameters instead of val_kwargs; retain the historical settings for comparison for now.
             # test_gen_batch.meta_info = {
             #     "eos_token_id": self.tokenizer.eos_token_id,
             #     "do_sample": do_sample,
             #     "temperature": temperature,
             #     "top_p": top_p,
             #     "top_k": top_k,
-            #     "repetition_penalty": repetition_penalty, # <<<< 关键点
+            #     "repetition_penalty": repetition_penalty, # Explicit override.
             #     "validate": True,
-            # }# 里面有如果是None就不修改的逻辑。
+            # } # None leaves the existing value unchanged.
             print(f"[COVALIDATE] meta info: {test_gen_batch.meta_info}")
             '''
             print(f"[COVALIDATE] meta info: {test_gen_batch.meta_info}")
-            这句话之后，如果参数temp_list（def _covalidate(self, temp_list=None): # 添加一个温度列表，非None就测测温度的影响并且重命名）
-            是空，那就temp_list= [None if test_gen_batch.meta_info 没有temperature else 该temperature]（里面有如果说None就用默认的对应补丁）
-            之后print说替换了temp_list
-            之后for temp_list去赋值给
+            Historical proposal: accept an optional temp_list in _covalidate.
+            If empty, use the temperature from meta_info, or None for the default.
+            Print the replacement temperature list.
+            Iterate over temp_list and assign each temperature to
             test_gen_batch.meta_info
-            最后命名的时候，如果一开始进来的参数temp_list非None就给csv文件名加上后缀t=xx
+            Append t=xx to CSV filenames when an explicit temperature list was supplied.
             '''
             if temp is not None:
                 test_gen_batch.meta_info['temperature']=temp
                 
             test_gen_batch_padded, pad_size = pad_dataproto_to_divisor(test_gen_batch, size_divisor)
 
-            # ✅ 并行生成
+            # Generate in parallel.
             with torch.no_grad():
                 test_output_gen_batch_padded = actor_model.generate_sequences(test_gen_batch_padded)
                 test_output_gen_batch = unpad_dataproto(test_output_gen_batch_padded, pad_size=pad_size)
 
             print("[COVALIDATE] sampling generation end")
 
-            # ✅ 将输入与输出合并
+            # Combine inputs and generated outputs.
             test_batch = test_batch.union(test_output_gen_batch)
             test_batch.meta_info["validate"] = True
 
-            # 解析文本输出
+            # Decode text outputs.
             input_texts = [self.tokenizer.decode(ids, skip_special_tokens=True)
                         for ids in test_batch.batch["prompts"]]
             output_texts = [self.tokenizer.decode(ids, skip_special_tokens=True)
                             for ids in test_output_gen_batch.batch["responses"]]
 
-            # ✅ 将 n_votes 次输出还原为 per-prompt 对应的投票组
+            # Group the n_votes outputs belonging to each prompt.
             assert len(output_texts) % n_votes == 0, "Output count not divisible by n_votes"
             grouped = [output_texts[i * n_votes: (i + 1) * n_votes]
                     for i in range(len(output_texts) // n_votes)]
@@ -841,7 +841,7 @@ class RayPPOTrainer:
 
             
             class MathEquivalenceUF:
-                """处理数学答案等价类的并查集实现"""
+                """Union-find over mathematically equivalent answers."""
                 def __init__(self, fast_mode=False):
                     self.parent = {}
                     self.fast_mode = fast_mode
@@ -855,11 +855,11 @@ class RayPPOTrainer:
                     return self.parent[x]
                 
                 def union(self, x, y):
-                    """如果x和y数学等价，合并它们的集合"""
+                    """Merge the sets when x and y are mathematically equivalent."""
                     if x is None or y is None:
                         return False
                     
-                    # 尝试判断x和y是否等价
+                    # Check mathematical equivalence.
                     if self._are_equivalent(x, y):
                         rx, ry = self.find(x), self.find(y)
                         if rx != ry:
@@ -868,16 +868,16 @@ class RayPPOTrainer:
                     return False
                 
                 def _are_equivalent(self, a, b):
-                    """使用grade函数判断两个答案是否数学等价"""
+                    """Use grade to compare two answers for mathematical equivalence."""
                     try:
-                        # 双向验证确保等价性
+                        # Require agreement in both directions.
                         return grade(a, b, fast=self.fast_mode) and grade(b, a, fast=self.fast_mode)
                     except Exception as e:
                         print(f"[EQUIVALENCE] Error comparing {a} and {b}: {str(e)}")
                         return False
                 
                 def get_equivalence_groups(self):
-                    """返回所有等价类分组"""
+                    """Return all equivalence classes."""
                     groups = defaultdict(list)
                     for x in self.parent:
                         root = self.find(x)
@@ -890,14 +890,14 @@ class RayPPOTrainer:
                 prompt = input_texts[i * n_votes].strip() if i * n_votes < len(input_texts) else ""
                 gt = groundtruths[i] if i < len(groundtruths) else ""
                 greedy_resp = greedy_outputs[i] if i < len(greedy_outputs) else ""
-                # 1. 提取所有答案（处理None值）
+                # 1. Extract answers, handling None.
                 extracted_answers = []
                 for gen in gens:
                     ans = extract_answer(gen)
                     extracted_answers.append(ans if ans is not None else "")
-                # 2. 创建并查集处理等价类
+                # 2. Initialize union-find for equivalence classes.
                 uf = MathEquivalenceUF(fast_mode=False)  
-                # 3. 尝试合并所有可能的等价答案
+                # 3. Merge equivalent answers.
                 for idx_a in range(len(extracted_answers)):
                     # for idx_b in range(idx_a + 1, len(extracted_answers)):
                     #     uf.union(extracted_answers[idx_a], extracted_answers[idx_b])
@@ -908,29 +908,29 @@ class RayPPOTrainer:
                         if uf.union(a, rep):
                             matched = True
                             break
-                    # 若没有与任何现有类等价，则新增一个独立类
+                    # Add an independent class if no existing class matches.
                     if not matched and a not in uf.parent:
                         uf.parent[a] = a
 
-                # 4️⃣ 全部 union 完成后再计数
+                # 4. Count votes after completing all unions.
                 vote_counter = Counter()
                 for ans in extracted_answers:
-                    root = uf.find(ans)  # 此时 root 已稳定
+                    root = uf.find(ans)  # Roots are now stable.
                     vote_counter[root] += 1
                 # representative, vote_count = vote_counter.most_common(1)[0]
-                # 🔧 补丁：禁止 "" 成为最终代表，但 vote_counter 保留 "" 的计数
+                # Exclude "" from the final representative, but retain its vote count.
                 non_empty_votes = [(ans, cnt) for ans, cnt in vote_counter.most_common() if ans.strip() != ""]
 
                 if len(non_empty_votes) > 0:
-                    representative, vote_count = non_empty_votes[0]     # 取非空字符串中票数最高的
+                    representative, vote_count = non_empty_votes[0] # Highest-count nonempty answer.
                 else:
-                    # 全部都是空字符串 —— fallback，也就只能选 ""
+                    # If every answer is empty, fall back to "".
                     representative, vote_count = vote_counter.most_common(1)[0]
 
                 equivalence_groups = uf.get_equivalence_groups()
     
                 final_vote = representative
-                # --- 构建按序列的输出行 （使用 OrderedDict 保持列顺序）
+                # Build the output row with a stable column order.
                 row = OrderedDict()
                 row['index'] = sample_idx
                 row['prompt'] = prompt
@@ -959,7 +959,7 @@ class RayPPOTrainer:
                     groups_with_counts.append((group, cnt))
                 row['equivalence_groups_list_num'] = groups_with_counts
 
-                # 最右侧放列表类型：votes, votes_len, votes_extract, votes_extract_len, votes_correct
+                # Append list-valued columns: votes, votes_len, votes_extract, votes_extract_len, votes_correct.
                 votes = gens
                 votes_len = [token_count(v) for v in votes]
                 votes_extract = [ea  for ea in extracted_answers]
@@ -977,23 +977,23 @@ class RayPPOTrainer:
                 results.append(row)
                 sample_idx += 1
 
-        # 3️⃣ 保存 CSV
-        # 构建目录结构: ./covalidate/{modelname}/{datasetname}
-        # os.path.join 会自动处理路径分隔符
+        # 3. Save the CSV.
+        # Directory layout: ./covalidate/{modelname}/{datasetname}
+        # os.path.join handles path separators.
         out_dir = os.path.join("./covalidate", exp_name)
         
-        # 创建多级目录 (如果中间文件夹不存在会自动创建)
+        # Create missing parent directories.
         os.makedirs(out_dir, exist_ok=True)
         
-        # 构建完整文件路径: .../covalidate_{modelstatus}.csv
+        # Full path: .../covalidate_{modelstatus}.csv
         # csv_path = os.path.join(out_dir, f"covalidate_{status_tag}.csv")
         csv_path = os.path.join(out_dir, f"covalidate_{status_tag}.csv")
         
-        # 保存操作 (示例)
+        # Save the results.
         # df.to_csv(csv_path, index=False)
         print(f"Saving validation results to: {csv_path}")
         
-        # 接下来保存 csv ...
+        # Continue saving the CSV.
         # df.to_csv(csv_path, index=False) 
         print(f"Saved to: {csv_path}")
 
@@ -1411,7 +1411,7 @@ class RayPPOTrainer:
         # currently, we only support validation using the reward_function.
         # debug st
         # for t in [0.2, 0.4, 0.6, 0.8, 1.0, 1.2,1.4,1.6]:
-        #     self._covalidate(temp=t) # 反正是不同模型一样的， 不同时验证了就
+        #     self._covalidate(temp=t) # Evaluate temperatures separately.
         # import os
         # os._exit(0)
         # self._covalidate()

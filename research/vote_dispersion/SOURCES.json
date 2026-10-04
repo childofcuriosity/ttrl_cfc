@@ -1,114 +1,146 @@
 [
   {
     "file": "arithmetic/main.py",
-    "source": "生成计算数学题/main.py",
+    "source": "arithmetic_dataset_generation/main.py",
     "bytes": 1008,
     "source_sha256": "dce02e3f0c1864b4d2b004ea7e39c8f7a550b803ac7c3ff56af29da028eb3ee1",
-    "git_lf_sha256": "379cf0ad130b0b8e374799188a33a8f1c6ad133ae82c2fd6c85d496a4de5d0fd"
+    "git_lf_sha256": "de50d14476efd5401b2752dcaa192aeefd6471a605714119746f90466bbf7ca7",
+    "source_path_note": "English rendering; original local path recorded in commit 7734111.",
+    "archived_git_lf_sha256": "379cf0ad130b0b8e374799188a33a8f1c6ad133ae82c2fd6c85d496a4de5d0fd"
   },
   {
     "file": "comparison/base_model_full.csv",
-    "source": "分类查看模型数据表现/base_model_full.csv",
+    "source": "model_output_classification/base_model_full.csv",
     "bytes": 4166833,
     "source_sha256": "60a64f3c2d75abc83fdf986b9c100dbfe97835b48ac581213ed05f32d373a11e",
-    "git_lf_sha256": "60a64f3c2d75abc83fdf986b9c100dbfe97835b48ac581213ed05f32d373a11e"
+    "git_lf_sha256": "60a64f3c2d75abc83fdf986b9c100dbfe97835b48ac581213ed05f32d373a11e",
+    "source_path_note": "English rendering; original local path recorded in commit 7734111.",
+    "archived_git_lf_sha256": "60a64f3c2d75abc83fdf986b9c100dbfe97835b48ac581213ed05f32d373a11e"
   },
   {
     "file": "comparison/checkpoint_model_full.csv",
-    "source": "分类查看模型数据表现/checkpoint_model_full.csv",
+    "source": "model_output_classification/checkpoint_model_full.csv",
     "bytes": 4166225,
     "source_sha256": "2992718a6bf212b0186f6eb45229f4f553b8b3cb33ae4a37e59d65cc80bea829",
-    "git_lf_sha256": "2992718a6bf212b0186f6eb45229f4f553b8b3cb33ae4a37e59d65cc80bea829"
+    "git_lf_sha256": "2992718a6bf212b0186f6eb45229f4f553b8b3cb33ae4a37e59d65cc80bea829",
+    "source_path_note": "English rendering; original local path recorded in commit 7734111.",
+    "archived_git_lf_sha256": "2992718a6bf212b0186f6eb45229f4f553b8b3cb33ae4a37e59d65cc80bea829"
   },
   {
     "file": "comparison/look.py",
-    "source": "分类查看模型数据表现/look.py",
+    "source": "model_output_classification/look.py",
     "bytes": 1914,
     "source_sha256": "c7b307959d6d2c705f55ebaf759a8f82e8794c4455f6c65e8be4bca4faefdae2",
-    "git_lf_sha256": "2e65e329dc8f05446f690ac98b4f3dd0c9e34757ce5464479a4a86dae7095ad2"
+    "git_lf_sha256": "188b9b632c10b9a23120a6ccc858b9040c8fe8e9e784ae586170ea7e93e4e8ed",
+    "source_path_note": "English rendering; original local path recorded in commit 7734111.",
+    "archived_git_lf_sha256": "2e65e329dc8f05446f690ac98b4f3dd0c9e34757ce5464479a4a86dae7095ad2"
   },
   {
     "file": "comparison/mutil_greedy.py",
-    "source": "分类查看模型数据表现/mutil_greedy.py",
+    "source": "model_output_classification/mutil_greedy.py",
     "bytes": 994,
     "source_sha256": "faacaef6fabf730b60b66aa8d86631afb6694ec5d9e47927e4be14d966e2aaa6",
-    "git_lf_sha256": "e5c7042db1310ed0837436f5a138e9383120244bc8ba7a121f85a6f4a3149bfe"
+    "git_lf_sha256": "c38fae912dc3f5583bcf296295122ed18e67f79f7f4ddc02b2fc628ead4aadf0",
+    "source_path_note": "English rendering; original local path recorded in commit 7734111.",
+    "archived_git_lf_sha256": "e5c7042db1310ed0837436f5a138e9383120244bc8ba7a121f85a6f4a3149bfe"
   },
   {
     "file": "gsm8k/preprocess_gsm8k_mc.py",
-    "source": "已有数据集改为选择题/preprocess_gsm8k_mc.py",
+    "source": "multiple_choice_conversion/preprocess_gsm8k_mc.py",
     "bytes": 4456,
     "source_sha256": "dfb19850970ecce96e9a4291d4a03cd89765657249b3b12eeb18c705310d27ae",
-    "git_lf_sha256": "bf40846cd1a5f6a2b34d1b6bb67a2f1007e8dc47d7382f0f8ccc6f6b3b2f2d64"
+    "git_lf_sha256": "99a95d44ebf7c5ea476a67923f5248639e39077457861753e4296196a5b40bf5",
+    "source_path_note": "English rendering; original local path recorded in commit 7734111.",
+    "archived_git_lf_sha256": "bf40846cd1a5f6a2b34d1b6bb67a2f1007e8dc47d7382f0f8ccc6f6b3b2f2d64"
   },
   {
     "file": "selection/arithmetic_dataset_with_greedy.csv",
-    "source": "构造多token贪心数据集/arithmetic_dataset_with_greedy.csv",
+    "source": "multi_token_greedy_dataset/arithmetic_dataset_with_greedy.csv",
     "bytes": 2882824,
     "source_sha256": "f71572c86c8be0c6f5cb195a05ed4ddee51608fe25d769fbb1b3a2f59540c7a0",
-    "git_lf_sha256": "f71572c86c8be0c6f5cb195a05ed4ddee51608fe25d769fbb1b3a2f59540c7a0"
+    "git_lf_sha256": "f71572c86c8be0c6f5cb195a05ed4ddee51608fe25d769fbb1b3a2f59540c7a0",
+    "source_path_note": "English rendering; original local path recorded in commit 7734111.",
+    "archived_git_lf_sha256": "f71572c86c8be0c6f5cb195a05ed4ddee51608fe25d769fbb1b3a2f59540c7a0"
   },
   {
     "file": "selection/arithmetic_dataset_with_greedy_multi_token.csv",
-    "source": "构造多token贪心数据集/arithmetic_dataset_with_greedy_multi_token.csv",
+    "source": "multi_token_greedy_dataset/arithmetic_dataset_with_greedy_multi_token.csv",
     "bytes": 45530,
     "source_sha256": "d9be0bdeb7f427e1095b1f955cc2788b7647f268169d102c3403af88b478ee7e",
-    "git_lf_sha256": "e9fcb417a3e9b6ad5c837155a403cd568ae3b2debe8f842056ad95275fd82738"
+    "git_lf_sha256": "e9fcb417a3e9b6ad5c837155a403cd568ae3b2debe8f842056ad95275fd82738",
+    "source_path_note": "English rendering; original local path recorded in commit 7734111.",
+    "archived_git_lf_sha256": "e9fcb417a3e9b6ad5c837155a403cd568ae3b2debe8f842056ad95275fd82738"
   },
   {
     "file": "selection/arithmetic_dataset_with_greedy_multi_token_sampled.csv",
-    "source": "构造多token贪心数据集/arithmetic_dataset_with_greedy_multi_token_sampled.csv",
+    "source": "multi_token_greedy_dataset/arithmetic_dataset_with_greedy_multi_token_sampled.csv",
     "bytes": 205007,
     "source_sha256": "29e2739a1789738fb0979f73960b57ce00307629bcad508b192d713f0f0ff7ef",
-    "git_lf_sha256": "29e2739a1789738fb0979f73960b57ce00307629bcad508b192d713f0f0ff7ef"
+    "git_lf_sha256": "29e2739a1789738fb0979f73960b57ce00307629bcad508b192d713f0f0ff7ef",
+    "source_path_note": "English rendering; original local path recorded in commit 7734111.",
+    "archived_git_lf_sha256": "29e2739a1789738fb0979f73960b57ce00307629bcad508b192d713f0f0ff7ef"
   },
   {
     "file": "selection/arithmetic_dataset_with_greedy_multi_token_sampled_with_counts.csv",
-    "source": "构造多token贪心数据集/arithmetic_dataset_with_greedy_multi_token_sampled_with_counts.csv",
+    "source": "multi_token_greedy_dataset/arithmetic_dataset_with_greedy_multi_token_sampled_with_counts.csv",
     "bytes": 263394,
     "source_sha256": "92938c33c5d19ae5497cd50a74400803cb60de9c0ba352832641799200c683a0",
-    "git_lf_sha256": "f08985a8d090cd0343ba6834c7c13bdebdec31e29bb04ba87d472e296bcec0e3"
+    "git_lf_sha256": "f08985a8d090cd0343ba6834c7c13bdebdec31e29bb04ba87d472e296bcec0e3",
+    "source_path_note": "English rendering; original local path recorded in commit 7734111.",
+    "archived_git_lf_sha256": "f08985a8d090cd0343ba6834c7c13bdebdec31e29bb04ba87d472e296bcec0e3"
   },
   {
     "file": "selection/arithmetic_dataset_with_greedy_multi_token_sampled_with_counts_contains_gt_more_than3_types.csv",
-    "source": "构造多token贪心数据集/arithmetic_dataset_with_greedy_multi_token_sampled_with_counts_contains_gt_more_than3_types.csv",
+    "source": "multi_token_greedy_dataset/arithmetic_dataset_with_greedy_multi_token_sampled_with_counts_contains_gt_more_than3_types.csv",
     "bytes": 34579,
     "source_sha256": "1ecc57bcea018d1460b0c713ad9595e5bb2dc29585b66252a0adfe105102ad95",
-    "git_lf_sha256": "39656a4f8c780635cfeeb22c6b017b477123cee23d3934d4232013f7d2a3d203"
+    "git_lf_sha256": "39656a4f8c780635cfeeb22c6b017b477123cee23d3934d4232013f7d2a3d203",
+    "source_path_note": "English rendering; original local path recorded in commit 7734111.",
+    "archived_git_lf_sha256": "39656a4f8c780635cfeeb22c6b017b477123cee23d3934d4232013f7d2a3d203"
   },
   {
     "file": "selection/arithmetic_dataset_with_greedy_multi_token_sampled_with_counts_contains_gt_more_than3_types_pseudo_correct_only.csv",
-    "source": "构造多token贪心数据集/arithmetic_dataset_with_greedy_multi_token_sampled_with_counts_contains_gt_more_than3_types_pseudo_correct_only.csv",
+    "source": "multi_token_greedy_dataset/arithmetic_dataset_with_greedy_multi_token_sampled_with_counts_contains_gt_more_than3_types_pseudo_correct_only.csv",
     "bytes": 16561,
     "source_sha256": "a6275f1b240a80fc129c4faeb28ab0a7822e8cfcf96f508160c6178ba1add1b4",
-    "git_lf_sha256": "d0966a9c34c81f7aae86d7b6659d5b582a08991f9f937cec6057db461952b164"
+    "git_lf_sha256": "d0966a9c34c81f7aae86d7b6659d5b582a08991f9f937cec6057db461952b164",
+    "source_path_note": "English rendering; original local path recorded in commit 7734111.",
+    "archived_git_lf_sha256": "d0966a9c34c81f7aae86d7b6659d5b582a08991f9f937cec6057db461952b164"
   },
   {
     "file": "selection/arithmetic_dataset_with_greedy_multi_token_sampled_with_counts_pseudo_right_greedy_wrong_2votes.csv",
-    "source": "构造多token贪心数据集/arithmetic_dataset_with_greedy_multi_token_sampled_with_counts_pseudo_right_greedy_wrong_2votes.csv",
+    "source": "multi_token_greedy_dataset/arithmetic_dataset_with_greedy_multi_token_sampled_with_counts_pseudo_right_greedy_wrong_2votes.csv",
     "bytes": 3670,
     "source_sha256": "ff88cadd8bc985f86f327e3bc606ae6528c89a6b8935e4f84460ccedd0333677",
-    "git_lf_sha256": "14b04927832015e5ccb4989503cd63e3d0df10e26083fc6c09922b002ab8b08b"
+    "git_lf_sha256": "14b04927832015e5ccb4989503cd63e3d0df10e26083fc6c09922b002ab8b08b",
+    "source_path_note": "English rendering; original local path recorded in commit 7734111.",
+    "archived_git_lf_sha256": "14b04927832015e5ccb4989503cd63e3d0df10e26083fc6c09922b002ab8b08b"
   },
   {
-    "file": "selection/给vote计数.py",
-    "source": "构造多token贪心数据集/给vote计数.py",
+    "file": "selection/count_votes.py",
+    "source": "multi_token_greedy_dataset/count_votes.py",
     "bytes": 774,
     "source_sha256": "d1bc2227e885d96f79650fd347a7b3235158435f893b892324094360ab468532",
-    "git_lf_sha256": "7d16c754c9dedbc574256903b5c64110535ae15d257bbd20443558d9a0a0bf89"
+    "git_lf_sha256": "4aea9d096e267abadcafbacefab3e24b2a02267f67490a3b4b5f95bf55371ef9",
+    "source_path_note": "English rendering; original local path recorded in commit 7734111.",
+    "archived_git_lf_sha256": "7d16c754c9dedbc574256903b5c64110535ae15d257bbd20443558d9a0a0bf89"
   },
   {
-    "file": "selection/滤vote.py",
-    "source": "构造多token贪心数据集/滤vote.py",
+    "file": "selection/filter_votes.py",
+    "source": "multi_token_greedy_dataset/filter_votes.py",
     "bytes": 1824,
     "source_sha256": "0eec653c637b91c6629467e5fb6b74d155863ddd2625e6d8176762cbc0715168",
-    "git_lf_sha256": "f5a2a0355ff99cd6c7fad5e17f466c1fd260032ea3cb98534c6dc0bf0087285e"
+    "git_lf_sha256": "9e86c0c6b60c05da3110232f4fda57148c3b2cad9e50b00cb01444f758104c98",
+    "source_path_note": "English rendering; original local path recorded in commit 7734111.",
+    "archived_git_lf_sha256": "f5a2a0355ff99cd6c7fad5e17f466c1fd260032ea3cb98534c6dc0bf0087285e"
   },
   {
-    "file": "selection/选多token.py",
-    "source": "构造多token贪心数据集/选多token.py",
+    "file": "selection/select_multi_token.py",
+    "source": "multi_token_greedy_dataset/select_multi_token.py",
     "bytes": 1038,
     "source_sha256": "cac885a72a124fd0210cafb01b4b0ceb69d36f91406e83bc0c1b7921b8a1ef30",
-    "git_lf_sha256": "a1e5912227ca86d6cca0a691c7c62a1a516e203cf19a0a9952eab7114731b9b0"
+    "git_lf_sha256": "bacda30b8d6d237bebc100fdc3e2e357089fe35a2a9792ad6106207ba50e2143",
+    "source_path_note": "English rendering; original local path recorded in commit 7734111.",
+    "archived_git_lf_sha256": "a1e5912227ca86d6cca0a691c7c62a1a516e203cf19a0a9952eab7114731b9b0"
   }
 ]

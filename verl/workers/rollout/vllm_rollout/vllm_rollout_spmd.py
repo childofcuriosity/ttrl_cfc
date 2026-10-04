@@ -47,7 +47,7 @@ from tensordict import TensorDict
 from vllm import LLM, SamplingParams
 from vllm.distributed import parallel_state as vllm_ps
 from vllm.lora.request import LoRARequest
-# 在rtxpro6000被迫用新版torch新版vllm新导入
+# Updated imports for newer torch/vllm required by the RTX PRO 6000.
 from vllm.v1.sample.metadata import SamplingMetadata
 from vllm.v1.worker.worker_base import WorkerWrapperBase
 
@@ -300,9 +300,9 @@ class vLLMRollout(BaseRollout):
                 "n": 1,  # if validate, already repeat in ray_trainer
             }
 
-        # ==================== 👇 在这里插入补丁 👇 ====================
-        # 补丁：从 meta_info 中提取采样参数并覆盖 kwargs
-        # 这里的参数优先级最高，会覆盖上面 if/elif 块中设置的默认值
+        # Sampling parameter overrides.
+        # Read explicit overrides from meta_info.
+        # These take precedence over defaults set by the if/elif block above.
         sampling_keys = ["repetition_penalty"]
         if do_sample:
             sampling_keys.extend(["temperature", "top_p", "top_k"])
@@ -310,7 +310,7 @@ class vLLMRollout(BaseRollout):
         for key in sampling_keys:
             if key in prompts.meta_info and prompts.meta_info[key] is not None:
                 kwargs[key] = prompts.meta_info[key]
-        # ==================== 👆 补丁结束 👆 ====================
+        # End of sampling parameter overrides.
 
         lora_requests = None
         if self.lora_kwargs:

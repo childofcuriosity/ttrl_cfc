@@ -1,18 +1,18 @@
-# --- 忽略巨大的安装包文件 (关键！) ---
+# Large installation packages
 *.whl
 *.whl.*
-# 比如 flash_attn...whl.1, .2 等
+# For example, flash_attn...whl.1 and .whl.2
 
-# --- 忽略日志文件 ---
+# Log files
 *.log
 wget-log
 install_log.txt
 
-# --- 忽略临时文件夹 ---
+# Temporary directories
 tmp*
 torchinductor_*
 
-# --- 再次确认忽略大文件夹 ---
+# Large artifact directories
 checkpoints/
 llms/
 covalidate/
@@ -21,28 +21,28 @@ outputs/
 wandb/
 
 # --- BIG FILES / FOLDERS TO IGNORE ---
-# 194G - 模型检查点
+# 194 GB: model checkpoints
 checkpoints/
 /checkpoints/
 
-# 70G - 大语言模型权重
+# 70 GB: language model weights
 llms/
 /llms/
 
-# 1.9G - 验证数据
+# 1.9 GB: validation data
 covalidate/
 
-# 204M - 数据集 (超过100M限制)
+# 204 MB: datasets (above the 100 MB file limit)
 data/
 /data/
 
-# 169M - WandB 日志
+# 169 MB: WandB logs
 wandb/
 
-# 6.2M - 输出文件 (虽然不大，但通常不需要版本控制)
+# 6.2 MB: generated outputs
 outputs/
 
-# 其他潜在的大文件
+# Other large artifacts
 *.pth
 *.pt
 *.ckpt
@@ -190,7 +190,7 @@ outputs
 .history
 
 llms
-如何生成模型covalidate的csv.txt
+how_to_generate_model_covalidate_csv.txt
 wandb
 checkpoints
 covalidate

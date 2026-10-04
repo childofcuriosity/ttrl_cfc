@@ -1,10 +1,10 @@
 import pandas as pd
-import ast  # 用于解析 vote_counts 字典字符串
+import ast  # Parse serialized vote-count dictionaries.
 
 def split_filtered_csvs(input_csv):
     df = pd.read_csv(input_csv)
 
-    # 解析 vote_counts 字典格式
+    # Parse the vote_counts dictionaries.
     df["vote_counts"] = df["vote_counts"].apply(lambda x: ast.literal_eval(x))
 
     # ✅ Task 1
@@ -38,7 +38,7 @@ import pandas as pd
 def filter_pseudo_correct(input_csv, output_csv=None):
     df = pd.read_csv(input_csv)
 
-    # 只保留伪标签正确的
+    # Keep records with correct pseudo-labels.
     df_filtered = df[df["pseudo_correct"] == True].copy()
 
     if output_csv is None:

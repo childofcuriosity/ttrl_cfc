@@ -3,9 +3,9 @@ verl x Ascend
 
 Last updated: 06/17/2025.
 
-我们在 verl 上增加对华为昇腾设备的支持。
+verl includes support for Huawei Ascend devices.
 
-硬件支持
+Supported hardware
 -----------------------------------
 
 Atlas 200T A2 Box16
@@ -13,10 +13,10 @@ Atlas 200T A2 Box16
 Atlas 900 A2 PODc
 
 
-安装
+Installation
 -----------------------------------
 
-基础环境准备
+Base environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 +-----------+-------------+
@@ -35,7 +35,7 @@ Atlas 900 A2 PODc
 vllm & vllm-ascend
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-为了能够在 verl 中正常使用 vllm，需使用以下命令编译安装 vllm 和 vllm-ascend。请注意根据机器类型区分安装方式。
+Build and install vllm and vllm-ascend using the commands below. Choose the installation command for your hardware.
 
 .. code-block:: bash
     
@@ -58,7 +58,7 @@ vllm & vllm-ascend
     export COMPILE_CUSTOM_KERNELS=1
     python setup.py install
 
-安装verl
+Install verl
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
@@ -68,7 +68,7 @@ vllm & vllm-ascend
     pip install -r requirements-npu.txt
     pip install -e .
 
-其他三方库说明
+Other dependencies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 +--------------+---------------+
@@ -83,28 +83,28 @@ vllm & vllm-ascend
 | tensordict   | 0.8.3 (ARM)   |
 +--------------+---------------+
 
-1. 支持通过 transformers 使能 --flash_attention_2， transformers 需大于等于 4.52.0版本。
-2. 不支持通过 flash_attn 使能 flash attention 加速。
-3. 不支持 liger-kernel 使能。
-4. 针对 ARM 服务器，tensordict 要求 0.8.3，可在依赖安装完成后再手动安装 tensordict。
-5. 针对 x86 服务器，需要安装 cpu 版本的 torchvision。
+1. Enabling --flash_attention_2 through transformers requires transformers >= 4.52.0.
+2. Enabling FlashAttention through flash_attn is not supported.
+3. liger-kernel is not supported.
+4. ARM servers require tensordict 0.8.3. Install it manually after the other dependencies if needed.
+5. x86 servers require the CPU version of torchvision.
 
 .. code-block:: bash
 
     pip install torchvision==0.20.1+cpu --index-url https://download.pytorch.org/whl/cpu
 
 
-快速开始
+Quick start
 -----------------------------------
-正式使用前，建议您通过对Qwen2.5-0.5B GRPO的训练尝试以检验环境准备和安装的正确性。
+Before using the environment for other runs, train Qwen2.5-0.5B with GRPO to check the installation.
 
-1.下载数据集并将数据集预处理为parquet格式，以便包含计算RL奖励所需的必要字段
+1. Download the dataset and preprocess it into Parquet, including the fields needed to compute RL rewards.
 
 .. code-block:: bash
 
     python3 examples/data_preprocess/gsm8k.py --local_dir ~/data/gsm8k
 
-2.执行训练
+2. Run training.
 
 .. code-block:: bash
 
@@ -154,7 +154,7 @@ vllm & vllm-ascend
         trainer.device=npu $@
 
 
-支持现状
+Current support
 -----------------------------------
 
 +-----------+-------------------------+-------------+-------------------+----------------------+
@@ -175,30 +175,30 @@ vllm & vllm-ascend
 |  SFT-PEFT | Qwen2.5-0.5B-instruct   |    0.06%    |        0.305      |  Atlas 900 A2 PODc   |
 +-----------+-------------------------+-------------+-------------------+----------------------+
 
-精度对比说明
+Accuracy comparison
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-对于 SFT 类算法，我们期望在相同配置下华为昇腾设备与 A100 的 loss 平均绝对误差<= 2%。计算方式如下图。更多信息请参考 `精度计算说明 <https://www.hiascend.com/document/detail/zh/Pytorch/600/ptmoddevg/trainingmigrguide/LMaccuracy_0001.html>`_。
+For SFT, the expected mean absolute error between Ascend and A100 losses under the same configuration is <= 2%. The figure below shows the calculation. See the `accuracy calculation guide <https://www.hiascend.com/document/detail/zh/Pytorch/600/ptmoddevg/trainingmigrguide/LMaccuracy_0001.html>`_ for details.
 
 .. image:: https://github.com/eric-haibin-lin/verl-community/blob/main/docs/loss_comparison.png?raw=true
    :alt: loss_comparison
 
-根据经验，对于 GRPO 等 RL 类算法，我们期望在相同配置下华为昇腾设备与 A100 的 rewards 平均绝对误差<= 4%，计算方式参考上图。
+For RL algorithms such as GRPO, the expected mean absolute error between Ascend and A100 rewards under the same configuration is <= 4%, based on experience. Use the calculation shown above.
 
 
-吞吐对比说明
+Throughput comparison
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Ascend npu 和 A100 分别取日志中前4个 step 的 "perf/throughput" 做平均， throughput ratio = npu 平均值 / A100 平均值。 
+Average "perf/throughput" over the first four logged steps for Ascend NPU and A100 separately. The throughput ratio is the NPU mean divided by the A100 mean.
 
 
 
-计划
+Roadmap
 -----------------------------------
 
-查看 `roadmap <https://github.com/volcengine/verl/discussions/900>`_ 获取更多特性的支持进度。
+See the `roadmap <https://github.com/volcengine/verl/discussions/900>`_ for progress on additional features.
 
 
 
-声明
+Notice
 -----------------------------------
-verl中提供的ascend支持代码皆为参考样例，商业使用请通过官方正式途径沟通，谢谢。
+The Ascend support code in verl is provided as reference examples. For commercial use, contact the provider through official channels.

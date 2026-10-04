@@ -13,7 +13,7 @@ def add_vote_counts_column(input_csv, output_csv=None):
             freq[v] = freq.get(v, 0) + 1
         vote_counts.append(freq)
 
-    df["vote_counts"] = vote_counts  # ✅ 新列为字典
+    df["vote_counts"] = vote_counts  # Store a dictionary in the new column.
 
     if output_csv is None:
         output_csv = input_csv.replace(".csv", "_with_counts.csv")

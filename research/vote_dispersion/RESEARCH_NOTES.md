@@ -1,18 +1,18 @@
-# 分支分票研究过程与材料来源
+# Vote-dispersion experiments and their sources
 
-本记录根据本地一手日志《做法.docx》中的研究顺序与日期整理。完整日志保留在本地；本文件摘录与当前源码归档直接相关的实验内容。
+These notes follow the dates and sequence in the author's local research journal. The full journal remains local; the excerpts here cover the experiments represented by this archive.
 
-## GSM8K 起点：2025 年 9 月 28 日
+## Starting with GSM8K: September 28, 2025
 
-最初希望通过单 token 输出隔离贪心解码与自我提升的关系，因此尝试将 GSM8K 改为选择题，让模型只输出 A、B、C、D。之后日志记录，小模型在这一约束下效果不理想，转向答案为单个数字的可控四则运算。
+The initial plan was to use single-token outputs to study the relationship between greedy decoding and self-improvement. GSM8K was converted into multiple-choice questions, with the model restricted to A, B, C, or D. The notes then record poor performance from the small model under this restriction, followed by a move to controlled arithmetic problems with single-digit answers.
 
-此次找到并归档的对应源码为 `gsm8k/preprocess_gsm8k_mc.py`。作者后续研究总结还指出，在 GSM8K 上观察到短整数与多 token 小数分支的票数差异；本目录没有把算术记录用作该 GSM8K 观察的量化证据。
+The recovered preprocessing script is `gsm8k/preprocess_gsm8k_mc.py`. The author's later account also describes vote dispersion between short integers and multi-token decimal errors on GSM8K. The arithmetic records in this directory are kept separate from that observation.
 
-## 未训练时就出现投票优势
+## Voting improved before training
 
-日志记录，增大采样次数后，伪标签正确率提高，而贪心结果不变。随后逐条检查发现错误输出的小数分支。
+The notes record higher pseudo-label accuracy as the number of samples increased, while greedy decoding stayed unchanged. Inspecting individual responses revealed branching decimal errors.
 
-原始例子：
+The original example was:
 
 ```text
 Question: 68 / 34 =
@@ -24,23 +24,23 @@ Votes:
 Pseudo label: 2
 ```
 
-日志据此提出：错误路径虽然在早期 token 上占优，后续却分叉成不同结果；正确答案集中于同一个字符串，因而赢得最高票。
+The interpretation in the notes was that a wrong path could dominate at an early token and then branch into different final answers. Correct responses concentrated on the same string and won the vote.
 
-后续实验还检查了单数字提示、仅统计首 token、精度、top-p 截断与采样数量。它们是理解这条机制的实验背景。
+Subsequent experiments examined single-digit prompts, first-token-only counting, numerical precision, top-p truncation, and sample count.
 
-## 构造可分析的子集：2025 年 10 月 23 日
+## Constructing a subset: October 23, 2025
 
-日志提出三个筛选条件：贪心输出较长、采样含标准答案、至少三个不同答案。现存记录与源码对应：
+The notes proposed three selection conditions: a longer greedy answer, at least one sampled ground-truth answer, and at least three distinct answers. The recovered code and records show the following sequence:
 
-1. 从 158,314 条保存的贪心记录筛出 1,613 条较长回答。
-2. 保存这些问题的多次采样，对答案字符串计票。
-3. 筛出 186 条含 GT 且至少三个答案的记录。
-4. 进一步得到 80 条伪标签正确的样本。
+1. Select 1,613 longer answers from 158,314 saved greedy predictions.
+2. Save multiple samples for these questions and count votes by answer string.
+3. Select 186 cases containing GT and at least three distinct answers.
+4. Retain the 80 cases with correct pseudo-labels.
 
-日志随后将这 80 条数据另存为 `arithmetic_dataset.csv` 用于训练。此次找到的是筛选源码与输入输出数据；未找到这轮原始模型推理和训练入口，因此未补写替代实现。
+The notes then describe saving those 80 cases as `arithmetic_dataset.csv` for training. The recovered files contain selection code and its inputs and outputs. The original inference and training entry points for this run have not been found, and no replacement implementation has been added.
 
-## 转向 TTRL：2025 年 10 月 24 日
+## Moving to TTRL: October 24, 2025
 
-讨论指出，早期算术实验的总体增量较小，需要到已发表方法中提升明显的真实任务检查共性。日志随后转向 TTRL，进入后续的输出分析与格式奖励消融。
+A discussion highlighted the small overall gain in the early arithmetic experiments and the need to inspect real tasks where published methods reported larger improvements. The notes then turn to TTRL, followed by output analysis and the format-reward ablation.
 
-因此，本次新增目录保存的是研究前期的分支分票实验链，仓库原有 TTRL 工程保存后续工作。两部分关联于同一个“增益来自哪里”的研究问题，数据与运行入口分别保留。
+This directory preserves the early vote-dispersion experiments. The existing TTRL code covers the later work. Both address where self-improvement gains come from, with their datasets and entry points kept separate.

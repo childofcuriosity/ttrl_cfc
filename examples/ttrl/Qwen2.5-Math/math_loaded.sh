@@ -39,7 +39,7 @@ LOG_NAME="${DATE}-${EXPERIMENT}-${MODEL}-${ADVANTAGE}"
 OUTPUT_DIR="checkpoints/${WANDB_PROJECT}/${MODEL}/${DATE}/${EXPERIMENT}-${ADVANTAGE}-${TIME_TAG}"
 
 # ------------------------------------------------------------
-# debug数据集:no
+# Debug dataset: no
 python -m verl.trainer.main_ppo \
 --config-name='ppo_trainer_ttrl.yaml'\
   data.train_files=["$DATA_LOCAL_DIR/$TASK/train.parquet"] \

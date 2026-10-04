@@ -12,7 +12,7 @@ def generate_arithmetic_dataset():
                     ans = a - b
                 elif op == '*':
                     ans = a * b
-                else:  # 除法
+                else:  # Division
                     if b == 0 or a % b != 0:
                         continue
                     ans = a // b
@@ -23,10 +23,10 @@ def generate_arithmetic_dataset():
                     })
     return samples
 
-# 生成数据
+# Generate the dataset.
 data = generate_arithmetic_dataset()
 
-# 转成 DataFrame 并保存
+# Convert to a DataFrame and save.
 df = pd.DataFrame(data, columns=["prompt", "ground_truth"])
 csv_path = "arithmetic_dataset.csv"
 df.to_csv(csv_path, index=False, encoding="utf-8")
