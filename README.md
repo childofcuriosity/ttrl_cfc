@@ -1,16 +1,14 @@
 # Where Do LLM Self-Improvement Gains Come From?
 
-In 2025, a number of self-improvement methods reported gains without an external supervisor. I wanted to understand why training a model on its own outputs could make it better. How much of the improvement reflects new knowledge, and how much comes from the reward rules or the structure of the data?
+Several self-improvement methods published in 2025 reported that models could improve without an external supervisor. I wanted to know what they were learning from their own outputs. Were they acquiring new knowledge, or getting better at things the reward rules already favored?
 
-I started by reproducing TTRL, inspecting responses before and after training, and running ablations. So far, I have not found clear evidence of new knowledge being acquired, but I have identified two concrete sources of improvement.
+I studied this through TTRL, arithmetic experiments, and a lot of inspection of individual responses. I have not found clear evidence of new knowledge being acquired in these experiments. Two other explanations emerged: learning to produce an extractable answer, and learning from correct answers that voting could already recover.
 
-## How much does fixing the output format explain?
+## Learning to write the answer in the expected format
 
-One problem stood out in the original model's responses: it often repeated itself, reached the length limit, or failed to put its answer inside `\boxed{...}`. TTRL relies on this format to extract answers for voting and reward calculation. A response that fails extraction gets no credit, even if the model could have answered the question.
+In the TTRL runs, the original model often repeated itself until it hit the length limit, or failed to put its answer inside `\boxed{...}`. The verifier needs that format to extract an answer. Failed extraction means no usable vote and no reward.
 
-This made me suspect that much of the gain came from teaching the model to finish its response and write its answer in the expected format.
-
-I changed the reward to test this: any extractable boxed answer received a reward, regardless of whether its content was correct. The rest followed the TTRL experimental setup, and evaluation still checked answer correctness.
+I suspected that much of the improvement came from fixing this behavior. To test it, I replaced the reward with a simple rule: give credit for any extractable boxed answer, even a wrong one. I kept the rest of the TTRL setup and still evaluated answer correctness.
 
 | Qwen2.5-Math-1.5B / MATH-TTT | Validation accuracy (`mean@16`) |
 |---|---:|
@@ -18,42 +16,32 @@ I changed the reward to test this: any extractable boxed answer received a rewar
 | Full TTRL | 0.6625 |
 | Format-only reward | 0.6285 |
 
-The fraction of the full gain recovered was:
+Format-only training recovered about **90% of the full gain**:
 
 `(0.6285 - 0.3200) / (0.6625 - 0.3200) ≈ 90.1%`
 
-In this experiment, rewarding format alone recovered about 90% of the improvement from full TTRL. This is the main evidence behind my conclusion that format correction accounts for a large part of the gain in this setting.
+For this model and setup, teaching it to produce a usable answer accounted for most of the measured improvement. [Results and sources](docs/FINDINGS.md) · [Run the experiments](docs/EXPERIMENTS.md)
 
-See [FINDINGS](docs/FINDINGS.md) for the results and [EXPERIMENTS](docs/EXPERIMENTS.md) for the commands.
+## Correct answers collect votes; wrong answers split them
 
-## Why can voting get an answer right when greedy decoding gets it wrong?
+I also noticed that short integer answers could win a vote against many different, longer errors. This was especially apparent on GSM8K, where wrong outputs sometimes branched into multi-token decimals.
 
-Another pattern was that correct answers were often short integers, while wrong answers branched into different decimals spanning multiple tokens. Wrong answers could outnumber correct ones overall, yet each individual wrong answer received fewer votes.
-
-Here is an example from my notes. For `68 / 34`, greedy decoding produced `1.946428`. Ten sampled responses were:
+One arithmetic example from my notes was `68 / 34`. Greedy decoding returned `1.946428`. Ten samples gave:
 
 ```text
-1.946428
-1.946...
-2
-1.946 (rounding
-2
-1.944947
-1.852941
-1
-1.796428
-2
+1.946428, 1.946..., 2, 1.946 (rounding, 2,
+1.944947, 1.852941, 1, 1.796428, 2
 ```
 
-Seven responses were wrong and three were right. But all three correct responses were `2`, so it won the vote. No new knowledge was needed for this selection: the correct answer was already in the model's output distribution and could now serve as a training pseudo-label.
+Only three samples were correct, but all three were `2`. Each wrong answer appeared once. Voting picked the right answer from outputs the model could already generate.
 
-This pattern was especially clear on GSM8K: short integer answers collected votes, while different multi-token decimal errors split them. To make this source of improvement clear, I ran controlled experiments on arithmetic tasks whose correct outputs were single characters. I selected cases with longer greedy responses, at least one correct sampled answer, and several distinct sampled answers, then compared their behavior before and after training. These experiments made the role of vote dispersion easier to isolate and demonstrate.
+### Training on cases where voting succeeds
 
-### A controlled arithmetic experiment
+To study this more closely, I constructed arithmetic problems whose correct answers were single characters, `0` through `9`. The model could still generate longer responses.
 
-I constructed arithmetic problems with answers from `0` to `9`. The correct answers were single characters, but generation was not forcibly limited to one character. From 158,314 saved greedy predictions, I selected 1,613 longer responses and sampled 20 answers per question. Of these, 186 had at least three distinct sampled answers and included the correct answer. I kept the 80 whose majority-vote pseudo-label was correct and used them for training.
+I started with 158,314 saved greedy predictions, selected the 1,613 longer responses, and sampled 20 answers for each question. Of those, 186 contained the correct answer and at least three distinct sampled answers. I kept the 80 with correct voting pseudo-labels and used them for training.
 
-One saved case was `212 / 212`. Greedy decoding returned `100`, while the samples split as follows:
+For example, on `212 / 212`, greedy decoding returned `100`:
 
 | Sampled answer | Votes |
 |---|---:|
@@ -62,51 +50,53 @@ One saved case was `212 / 212`. Greedy decoding returned `100`, while the sample
 | `101` | 5 |
 | `100` | 4 |
 
-The 11 wrong responses split across three answers, so the correct answer won with 9 votes. This also shows that the mechanism applies to longer integer errors, not just decimals.
+The wrong responses outnumbered the correct ones 11 to 9, but split across three answers. So `1` won. Longer integer errors could produce the same effect as decimals.
 
-All 80 selected questions were initially wrong under greedy decoding. After training on their pseudo-labels, the journal records:
+Before training, greedy decoding got all 80 selected questions wrong. Training on the voting pseudo-labels changed that:
 
-| Evaluation on the selected 80 questions | Greedy accuracy | Source |
-|---|---:|---|
-| Before training | 0/80 (0%) | Archived predictions |
-| After the initial training run | 68/80 (85%) | Research journal |
-| After one additional epoch | 69/80 (86.25%) | Research journal |
+| On the selected 80 questions | Greedy accuracy |
+|---|---:|
+| Before training | 0/80 (0%) |
+| After training | 68/80 (85%) |
+| After one more epoch | 69/80 (86.25%) |
 
-This experiment shows how an answer already recoverable by voting can become available through greedy decoding after training. The 80 questions were selected using ground truth and pseudo-label correctness, then used for training and evaluation. The result demonstrates the mechanism on that subset; it is not a held-out generalization score. The post-training figures survive in the journal, while the corresponding full prediction files have not yet been recovered.
+The model learned to reach, through greedy decoding, answers that voting had already found. These were the same questions used for training, selected using ground truth and pseudo-label correctness. The initial predictions are archived; the post-training counts come from my journal, since I have not recovered the full prediction files for those runs.
 
-### What happens when the branching effect is reduced?
+### Reducing the room for branching
 
-I also tested the explanation in the other direction. On an earlier set of 15,853 arithmetic questions, I first made the prompt explicitly request one single-digit non-negative integer. I then compared only the first token for both greedy decoding and sampled answers, removing differences caused by their continuations from the comparison.
+An earlier experiment on 15,853 arithmetic questions tested the explanation from the other direction. I first strengthened the instruction to request exactly one single-digit non-negative integer. Then I compared only the first token of both greedy and sampled answers.
 
-| Setting | Greedy wrong, vote right | Greedy right, vote wrong | Net extra correct answers from voting |
+| Setting | Greedy wrong, vote right | Greedy right, vote wrong | Net voting advantage |
 |---|---:|---:|---:|
 | Original setup, 10 samples per question | 151 | 19 | +132 |
-| Stronger single-digit output instruction | 45 | 25 | +20 |
-| First-token-only comparison for both methods | 21 | 28 | -7 |
+| Stronger single-digit instruction | 45 | 25 | +20 |
+| First-token comparison for both methods | 21 | 28 | -7 |
 
-The net advantage is the first count minus the second. As the comparison left less room for multi-token continuations to split votes, the voting advantage shrank from 132 questions to 20, then disappeared. This supports the interpretation that output branching was an important source of the original advantage.
+Voting's net advantage fell from 132 questions to 20, then disappeared. That is what I would expect if multi-token branching explained much of its initial advantage.
 
-An intermediate attempt counted only the first token of sampled answers while still evaluating the full greedy answer. That left an unequal comparison: greedy decoding could get the first token right and still fail by continuing. Applying the same first-token rule to both methods resolved this issue. These are sequential runs recorded in the research journal; their complete generation configurations have not yet been recovered.
+I initially applied the first-token rule only to sampled answers. That was an unfair comparison: greedy decoding could start correctly and still be marked wrong for continuing. The final row applies the rule to both methods. These counts come from successive runs in my journal; their complete generation configurations have not yet been recovered.
 
-The code is in [research/vote_dispersion](research/vote_dispersion/). GSM8K multiple-choice preprocessing and the arithmetic experiment records are kept separately. The [research notes](research/vote_dispersion/RESEARCH_NOTES.md) describe how these experiments developed and give the full comparison counts.
+The [research notes](research/vote_dispersion/RESEARCH_NOTES.md) contain the full counts and experiment history. The [code and saved records](research/vote_dispersion/) keep the arithmetic experiments separate from GSM8K preprocessing.
 
-## Where I want to take this next
+## What I want to work on next
 
-I originally planned to extend the experiments to more models, datasets, and self-improvement methods. As papers with similar conclusions began to appear, I became more interested in a different question: if biases in the reward system have such a large effect, can we deliberately design useful feedback?
+I originally planned to repeat the analysis across more models and self-improvement methods. As papers with similar conclusions appeared, my interest shifted toward designing the feedback itself.
 
-This is the direction I hope to pursue during my PhD. My working view is that a self-training loop without useful feedback is unlikely to produce new knowledge reliably. Even without an external supervisor, the structure of the answers, voting rules, and format requirements still shape what the model learns. For self-improvement and recursive self-improvement (RSI), I want to understand where these feedback signals come from, when they help, and how to design them well.
+The format ablation and voting experiments both made me pay closer attention to what a system rewards. Without an external supervisor, answer structure, voting rules, and format requirements still influence what gets reinforced. I doubt that self-training can reliably discover new knowledge without some useful source of feedback.
 
-## Repository contents
+During my PhD, I want to study how to build that feedback into self-improvement and recursive self-improvement (RSI) systems: what makes it reliable, where it fails, and how to improve it.
+
+## Code and records
 
 | Location | Contents |
 |---|---|
-| [research/vote_dispersion/](research/vote_dispersion/) | Original scripts, arithmetic records, and instructions for the vote-dispersion experiments |
+| [research/vote_dispersion/](research/vote_dispersion/) | Arithmetic scripts, saved predictions, and instructions |
 | [research/vote_dispersion/gsm8k/](research/vote_dispersion/gsm8k/) | GSM8K multiple-choice preprocessing |
 | [examples/ttrl/](examples/ttrl/) | TTRL training and checkpoint-loading scripts |
 | [verl/trainer/ppo/ttrl_utils.py](verl/trainer/ppo/ttrl_utils.py) | TTRL pseudo-label voting |
-| [analysis/](analysis/) and [results/](results/) | Format-reward analysis tools and result summaries |
-| [docs/archive/](docs/archive/) | Earlier English and Chinese READMEs |
+| [analysis/](analysis/) and [results/](results/) | Format-reward analysis and results |
+| [docs/archive/](docs/archive/) | Earlier READMEs, translated into English |
 
-The archived scripts retain their original experimental logic. The [instructions](research/vote_dispersion/README.md) list dependencies, inputs, and execution order, along with the early inference and training scripts that have not yet been recovered.
+The scripts retain their original experimental logic. Dependencies, inputs, execution order, and missing historical scripts are listed in the [instructions](research/vote_dispersion/README.md).
 
-The code builds on [veRL](https://github.com/volcengine/verl) and [TTRL](https://github.com/PRIME-RL/TTRL), with the original licenses and notices retained. See [PROVENANCE](docs/PROVENANCE.md) for the sources of the archived materials.
+Built on [veRL](https://github.com/volcengine/verl) and [TTRL](https://github.com/PRIME-RL/TTRL), with their licenses and notices retained. See [PROVENANCE](docs/PROVENANCE.md) for the sources of the archived materials.
