@@ -28,6 +28,23 @@ The interpretation in the notes was that a wrong path could dominate at an early
 
 Subsequent experiments examined single-digit prompts, first-token-only counting, numerical precision, top-p truncation, and sample count.
 
+### Reducing the branching effect on 15,853 questions
+
+The journal records a sequence of comparisons on an earlier arithmetic set. After inspecting decimal errors, the prompt was strengthened to request: `Output exactly ONE single-digit non-negative integer as the answer.` The next intervention counted only the first token of each sampled answer; the final comparison also applied the first-token rule to the greedy answer.
+
+| Setting | Both correct | Both wrong | Greedy right, vote wrong | Greedy wrong, vote right | Voting net gain |
+|---|---:|---:|---:|---:|---:|
+| Original setup, 10 samples | 15,315 | 368 | 19 | 151 | +132 |
+| Stronger single-digit instruction, 10 samples | 15,476 | 307 | 25 | 45 | +20 |
+| First-token voting, full greedy answer | 15,476 | 308 | 25 | 44 | +19 |
+| First-token comparison for both methods | 15,492 | 312 | 28 | 21 | -7 |
+
+Each row sums to 15,853. Voting net gain is the number of greedy-wrong/vote-right cases minus greedy-right/vote-wrong cases. The net accuracy differences are approximately +0.833, +0.126, +0.120, and -0.044 percentage points, respectively.
+
+The intermediate row was still asymmetric. One example in the journal has GT `1`, greedy output `1002`, and ten sampled first-token votes for `1`. Greedy decoding was penalized for its continuation while sampled answers were not. Comparing only the first token for both methods removed this asymmetry; the remaining count difference no longer favored voting.
+
+These observations support output branching as a source of the initial voting advantage. The first-token intervention changes how outputs are compared; it is not documented as a hard one-token generation limit. The numbers above are transcribed from sequential runs in the journal, rather than recomputed from complete saved predictions and matched generation configurations. They belong to the earlier 15,853-question experiment, separate from the later 158,314-question pool and selected 80-question training experiment. The other 15,853-row files in `comparison/` have different aggregate results and should not be substituted for these runs.
+
 ## Constructing a subset: October 23, 2025
 
 The notes proposed three selection conditions: a longer greedy answer, at least one sampled ground-truth answer, and at least three distinct answers. The recovered code and records show the following sequence:

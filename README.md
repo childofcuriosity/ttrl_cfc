@@ -74,7 +74,21 @@ All 80 selected questions were initially wrong under greedy decoding. After trai
 
 This experiment shows how an answer already recoverable by voting can become available through greedy decoding after training. The 80 questions were selected using ground truth and pseudo-label correctness, then used for training and evaluation. The result demonstrates the mechanism on that subset; it is not a held-out generalization score. The post-training figures survive in the journal, while the corresponding full prediction files have not yet been recovered.
 
-The code is in [research/vote_dispersion](research/vote_dispersion/). GSM8K multiple-choice preprocessing and the arithmetic experiment records are kept separately. The [research notes](research/vote_dispersion/RESEARCH_NOTES.md) describe how these experiments developed.
+### What happens when the branching effect is reduced?
+
+I also tested the explanation in the other direction. On an earlier set of 15,853 arithmetic questions, I first made the prompt explicitly request one single-digit non-negative integer. I then compared only the first token for both greedy decoding and sampled answers, removing differences caused by their continuations from the comparison.
+
+| Setting | Greedy wrong, vote right | Greedy right, vote wrong | Net extra correct answers from voting |
+|---|---:|---:|---:|
+| Original setup, 10 samples per question | 151 | 19 | +132 |
+| Stronger single-digit output instruction | 45 | 25 | +20 |
+| First-token-only comparison for both methods | 21 | 28 | -7 |
+
+The net advantage is the first count minus the second. As the comparison left less room for multi-token continuations to split votes, the voting advantage shrank from 132 questions to 20, then disappeared. This supports the interpretation that output branching was an important source of the original advantage.
+
+An intermediate attempt counted only the first token of sampled answers while still evaluating the full greedy answer. That left an unequal comparison: greedy decoding could get the first token right and still fail by continuing. Applying the same first-token rule to both methods resolved this issue. These are sequential runs recorded in the research journal; their complete generation configurations have not yet been recovered.
+
+The code is in [research/vote_dispersion](research/vote_dispersion/). GSM8K multiple-choice preprocessing and the arithmetic experiment records are kept separately. The [research notes](research/vote_dispersion/RESEARCH_NOTES.md) describe how these experiments developed and give the full comparison counts.
 
 ## Where I want to take this next
 
