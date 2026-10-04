@@ -1,36 +1,38 @@
-# 大模型自我提升的增益来源研究
+# Where Do LLM Self-Improvement Gains Come From?
 
-2025 年出现了不少无需外部监督器的 self-improvement 方法。我好奇的是：模型用自己的输出训练自己，为什么会变好？这些提升里有多少是新知识，又有多少来自奖励规则和数据本身的特点？
+[中文](README_zh.md)
 
-我从 TTRL 开始复现，逐条看训练前后的回答，再做消融。到目前为止，我没有找到新知识产生的明确证据，但找到了两个具体的增益来源。
+In 2025, a number of self-improvement methods reported gains without an external supervisor. I wanted to understand why training a model on its own outputs could make it better. How much of the improvement reflects new knowledge, and how much comes from the reward rules or the structure of the data?
 
-## 格式修正能解释多少提升
+I started by reproducing TTRL, inspecting responses before and after training, and running ablations. So far, I have not found clear evidence of new knowledge being acquired, but I have identified two concrete sources of improvement.
 
-看模型输出时，一个很明显的问题是：原模型经常重复、写到长度上限，最后没有按要求给出 `\boxed{...}`。TTRL 要从这个格式里抽取答案，才能投票和计算奖励。模型即使有可能答对，没把答案按格式写出来也得不到分。
+## How much does fixing the output format explain?
 
-这让我怀疑，训练带来的很大一部分提升，其实是在教模型把答案正常写出来。
+One problem stood out in the original model's responses: it often repeated itself, reached the length limit, or failed to put its answer inside `\boxed{...}`. TTRL relies on this format to extract answers for voting and reward calculation. A response that fails extraction gets no credit, even if the model could have answered the question.
 
-于是我改了奖励：只要能抽取出 boxed 答案就给分，里面写得对不对都不管。其他部分沿用 TTRL 的实验设置，评估时仍然检查答案是否正确。
+This made me suspect that much of the gain came from teaching the model to finish its response and write its answer in the expected format.
 
-| Qwen2.5-Math-1.5B / MATH-TTT | 验证准确率（`mean@16`） |
+I changed the reward to test this: any extractable boxed answer received a reward, regardless of whether its content was correct. The rest followed the TTRL experimental setup, and evaluation still checked answer correctness.
+
+| Qwen2.5-Math-1.5B / MATH-TTT | Validation accuracy (`mean@16`) |
 |---|---:|
-| 训练前 | 约 0.3200 |
-| 完整 TTRL | 0.6625 |
-| 只给格式奖励 | 0.6285 |
+| Before training | ~0.3200 |
+| Full TTRL | 0.6625 |
+| Format-only reward | 0.6285 |
 
-按增量计算：
+The fraction of the full gain recovered was:
 
 `(0.6285 - 0.3200) / (0.6625 - 0.3200) ≈ 90.1%`
 
-也就是说，在这组实验里，只给格式奖励就拿到了完整 TTRL 约 90% 的提升。这是我认为格式修正是主要原因的依据。
+In this experiment, rewarding format alone recovered about 90% of the improvement from full TTRL. This is the main evidence behind my conclusion that format correction accounts for a large part of the gain in this setting.
 
-具体结果见 [FINDINGS](docs/FINDINGS.md)，运行方法见 [EXPERIMENTS](docs/EXPERIMENTS.md)。
+See [FINDINGS](docs/FINDINGS.md) for the results and [EXPERIMENTS](docs/EXPERIMENTS.md) for the commands.
 
-## 为什么投票能选对，贪心却选错
+## Why can voting get an answer right when greedy decoding gets it wrong?
 
-另一个现象是：正确答案往往是很短的整数，错误答案却会分叉成各种小数。错误答案加起来可能更多，但分到每一种具体答案上，票数就不一定比正确答案多了。
+Another pattern was that correct answers were often short integers, while wrong answers branched into different decimals spanning multiple tokens. Wrong answers could outnumber correct ones overall, yet each individual wrong answer received fewer votes.
 
-日志里有这样一道题：`68 / 34`。贪心输出是 `1.946428`，十次采样得到：
+Here is an example from my notes. For `68 / 34`, greedy decoding produced `1.946428`. Ten sampled responses were:
 
 ```text
 1.946428
@@ -45,29 +47,29 @@
 2
 ```
 
-七次错、三次对，但三个正确答案都是 `2`，所以最后投票选中了它。这里不需要模型先学到新知识，已有的正确输出就能通过投票被选出来，再成为训练用的伪标签。
+Seven responses were wrong and three were right. But all three correct responses were `2`, so it won the vote. No new knowledge was needed for this selection: the correct answer was already in the model's output distribution and could now serve as a training pseudo-label.
 
-我在 GSM8K 上也观察到这种情况：短整数答案容易集中得票，多 token 的小数错误分支则把票分散了。为了看清楚这个过程，还构造了答案为单个数字的算术题，筛选贪心回答较长、采样包含正确答案、且有多个不同答案的样本，检查训练前后的变化。
+I also observed this pattern on GSM8K: short integer answers collected votes, while different multi-token decimal errors split them. To study the process more closely, I constructed arithmetic problems with single-digit answers. I selected cases with longer greedy responses, at least one correct sampled answer, and several distinct sampled answers, then compared their behavior before and after training.
 
-这部分源码放在 [research/vote_dispersion](research/vote_dispersion/)。其中分别保存了 GSM8K 选择题预处理代码和算术实验记录，具体过程见[研究日志整理](research/vote_dispersion/RESEARCH_NOTES.md)。
+The code is in [research/vote_dispersion](research/vote_dispersion/). GSM8K multiple-choice preprocessing and the arithmetic experiment records are kept separately. The [research notes](research/vote_dispersion/RESEARCH_NOTES.md) describe how these experiments developed.
 
-## 后来想做什么
+## Where I want to take this next
 
-原本我打算把实验扩展到更多模型、数据集和自我提升方法上。后来陆续看到相近结论的论文，觉得更值得继续做的是：既然系统中的奖励偏差能带来这么大的影响，能不能主动设计出好的反馈？
+I originally planned to extend the experiments to more models, datasets, and self-improvement methods. As papers with similar conclusions began to appear, I became more interested in a different question: if biases in the reward system have such a large effect, can we deliberately design useful feedback?
 
-这也是我希望在博士阶段研究的方向。我倾向于认为，缺少有效反馈的自我循环很难可靠地产生新知识。没有外部监督器时，题目的答案结构、投票规则、格式要求仍然在发挥作用。研究 self-improvement 和递归自我提升（RSI），需要弄清楚这些反馈从哪里来，什么时候有用，以及怎样把它们设计好。
+This is the direction I hope to pursue during my PhD. My working view is that a self-training loop without useful feedback is unlikely to produce new knowledge reliably. Even without an external supervisor, the structure of the answers, voting rules, and format requirements still shape what the model learns. For self-improvement and recursive self-improvement (RSI), I want to understand where these feedback signals come from, when they help, and how to design them well.
 
-## 仓库内容
+## Repository contents
 
-| 目录 | 内容 |
+| Location | Contents |
 |---|---|
-| [research/vote_dispersion/](research/vote_dispersion/) | 分支分票相关的原始脚本、算术实验记录和运行说明 |
-| [research/vote_dispersion/gsm8k/](research/vote_dispersion/gsm8k/) | GSM8K 选择题预处理 |
-| [examples/ttrl/](examples/ttrl/) | TTRL 训练与加载脚本 |
-| [verl/trainer/ppo/ttrl_utils.py](verl/trainer/ppo/ttrl_utils.py) | TTRL 伪标签投票实现 |
-| [analysis/](analysis/) 与 [results/](results/) | 格式奖励分析工具与汇总结果 |
-| [docs/archive/](docs/archive/) | 旧版中英文 README |
+| [research/vote_dispersion/](research/vote_dispersion/) | Original scripts, arithmetic records, and instructions for the vote-dispersion experiments |
+| [research/vote_dispersion/gsm8k/](research/vote_dispersion/gsm8k/) | GSM8K multiple-choice preprocessing |
+| [examples/ttrl/](examples/ttrl/) | TTRL training and checkpoint-loading scripts |
+| [verl/trainer/ppo/ttrl_utils.py](verl/trainer/ppo/ttrl_utils.py) | TTRL pseudo-label voting |
+| [analysis/](analysis/) and [results/](results/) | Format-reward analysis tools and result summaries |
+| [docs/archive/](docs/archive/) | Earlier English and Chinese READMEs |
 
-归档脚本保留了原来的实验逻辑。依赖、输入文件和运行顺序见[运行说明](research/vote_dispersion/README.md)；尚未找到的早期推理和训练脚本也在那里注明。
+The archived scripts retain their original experimental logic. The [instructions](research/vote_dispersion/README.md) list dependencies, inputs, and execution order, along with the early inference and training scripts that have not yet been recovered. These detailed notes are currently in Chinese.
 
-代码基于 [veRL](https://github.com/volcengine/verl) 和 [TTRL](https://github.com/PRIME-RL/TTRL)，保留原有许可证及声明。材料来源见 [PROVENANCE](docs/PROVENANCE.md)。
+The code builds on [veRL](https://github.com/volcengine/verl) and [TTRL](https://github.com/PRIME-RL/TTRL), with the original licenses and notices retained. See [PROVENANCE](docs/PROVENANCE.md) for the sources of the archived materials.
